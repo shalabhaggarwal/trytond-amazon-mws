@@ -17,6 +17,8 @@
                         <field name="access_key"/>
                         <label name="secret_key"/>
                         <field name="secret_key"/>
+                        <label name="company"/>
+                        <field name="company"/>
                     </form>
                 ]]>
             </field>

@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!-- This file is part of Tryton. The COPYRIGHT file at the top level of
+this repository contains the full copyright notices and license terms. -->
+<data>
+    <xpath expr="/form/field[@name='description']" position="after">
+        <newline/>
+        <separator string="Amazon Details" id="amazon" colspan="6"/>
+        <label name="amazon_product_id" />
+        <field name="amazon_product_id" colspan="2"/>
+        <label name="amazon_product_id_type" />
+        <field name="amazon_product_id_type" colspan="2"/>
+        <newline/>
+        <field name="amazon_identifiers" colspan="6"/>
+        <newline/>
+        <field name="mws_accounts" colspan="6"/>
+    </xpath>
+</data>

@@ -23,3 +23,5 @@ class AmazonMWSAccount(ModelSQL, ModelView):
     marketplace_id = fields.Char("MarketPlace ID", required=True)
     access_key = fields.Char("Access Key", required=True)
     secret_key = fields.Char("Secret Key", required=True)
+
+    company = fields.Many2One("company.company", "Company", required=True)

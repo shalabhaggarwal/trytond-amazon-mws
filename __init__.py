@@ -9,6 +9,12 @@
 """
 from trytond.pool import Pool
 from .amazon import AmazonMWSAccount
+from .product import (
+    Product, ExportCatalogStart, ExportCatalog, ProductMwsAccount,
+    ExportCatalogDone, ExportCatalogPricingStart, ExportCatalogPricing,
+    ExportCatalogPricingDone, ExportCatalogInventoryStart,
+    ExportCatalogInventory, ExportCatalogInventoryDone, ProductIdentifier,
+)
 
 
 def register():
@@ -17,5 +23,20 @@ def register():
     """
     Pool.register(
         AmazonMWSAccount,
+        Product,
+        ProductIdentifier,
+        ProductMwsAccount,
+        ExportCatalogStart,
+        ExportCatalogDone,
+        ExportCatalogPricingStart,
+        ExportCatalogPricingDone,
+        ExportCatalogInventoryStart,
+        ExportCatalogInventoryDone,
         module='amazon_mws', type_='model'
+    )
+    Pool.register(
+        ExportCatalog,
+        ExportCatalogPricing,
+        ExportCatalogInventory,
+        module='amazon_mws', type_='wizard'
     )
