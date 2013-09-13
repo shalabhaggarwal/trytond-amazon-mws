@@ -74,6 +74,110 @@ class Product:
             )
 
     @classmethod
+    def find_or_create_using_amazon_sku(cls, sku):
+        """
+        Find or create a product using Amazon Seller SKU. This method looks
+        for an existing product using the SKU provided. If found, it
+        returns the product found, else creates a new one and returns that
+
+        :param asin: Product Seller SKU from Amazon
+        :returns: Active record of Product Created
+        """
+        MwsAccount = Pool().get('amazon.mws.account')
+
+        products = cls.search([('code', '=', sku)])
+
+        if products:
+            return products[0]
+
+        # if product is not found get the info from amazon and
+        # delegate to create_using_amazon_data
+        mws_account = MwsAccount(
+            Transaction().context.get('amazon_mws_account')
+        )
+        api = mws.Products(
+            mws_account.access_key,
+            mws_account.secret_key,
+            mws_account.merchant_id,
+        )
+
+        product_data = api.get_matching_product_for_id(
+            mws_account.marketplace_id, 'SellerSKU', [sku]
+        ).parsed
+
+        return cls.create_using_amazon_data(product_data)
+
+    @classmethod
+    def extract_product_values_from_amazon_data(cls, product_attributes):
+        """
+        Extract product values from the amazon data, used for
+        creation of product. This method can be overwritten by
+        custom modules to store extra info to a product
+
+        :param product_data: Product data from amazon
+        :returns: Dictionary of values
+        """
+        MwsAccount = Pool().get('amazon.mws.account')
+
+        mws_account = MwsAccount(
+            Transaction().context.get('amazon_mws_account')
+        )
+
+        return {
+            'name': product_attributes['Title']['value'],
+            'list_price': Decimal('0.01'),
+            'cost_price': Decimal('0.01'),
+            'default_uom': mws_account.default_uom.id,
+            'salable': True,
+            'sale_uom': mws_account.default_uom.id,
+            'account_expense': mws_account.default_account_expense.id,
+            'account_revenue': mws_account.default_account_revenue.id,
+        }
+
+    @classmethod
+    def create_using_amazon_data(cls, product_data):
+        """
+        Create a new product with the `product_data` from amazon.
+
+        :param product_data: Product Data from Amazon
+        :returns: Browse record of product created
+        """
+        Template = Pool().get('product.template')
+
+        # TODO: Handle attribute sets in multiple languages
+        product_attribute_set = product_data['Products']['Products'][
+            'AttributeSets'
+        ]
+        if isinstance(product_attribute_set, dict):
+            product_attributes = product_attribute_set['ItemAttributes']
+        else:
+            product_attributes = product_attribute_set[0]['ItemAttributes']
+
+        product_values = cls.extract_product_values_from_amazon_data(
+            product_attributes
+        )
+
+        product_values.update({
+            'products': [('create', [{
+                'code': product_data['Id']['value'],
+                'description': product_attributes['Title']['value'],
+                'amazon_identifiers': [('create', [{
+                    'product_id': product_data['Products']['Product'][
+                        'Identifiers'
+                    ]['MarketplaceASIN']['ASIN']['value'],
+                    'product_id_type': 'ASIN',
+                }])],
+                'mws_accounts': [('create', [{
+                    'account': Transaction().context.get('amazon_mws_account')
+                }])]
+            }])],
+        })
+
+        product_template, = Template.create([product_values])
+
+        return product_template.products[0]
+
+    @classmethod
     def export_to_amazon(cls, products):
         """Export the products to the Amazon account in context
         """
